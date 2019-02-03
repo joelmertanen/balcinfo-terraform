@@ -14,6 +14,10 @@ resource "google_dns_managed_zone" "prod" {
   name        = "${var.local_project}-zone"
   dns_name    = "${var.domain_name}."
   description = "Production DNS zone"
+
+  lifecycle = {
+    prevent_destroy = true
+  }
 }
 
 resource "google_dns_record_set" "prod-dns-ns" {
@@ -24,6 +28,10 @@ resource "google_dns_record_set" "prod-dns-ns" {
   managed_zone = "${google_dns_managed_zone.prod.name}"
 
   rrdatas = "${var.dns_servers}"
+
+  lifecycle = {
+    prevent_destroy = true
+  }
 }
 
 resource "google_dns_record_set" "grafana" {
