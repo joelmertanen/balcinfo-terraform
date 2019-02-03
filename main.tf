@@ -6,8 +6,34 @@ provider "google" {
 }
 
 resource "google_compute_address" "static" {
-  name    = "temperature-ip"
-  address = "${var.external_address}"
+  name         = "${var.local_project}-ip"
+  network_tier = "PREMIUM"
+}
+
+resource "google_dns_managed_zone" "prod" {
+  name        = "${var.local_project}-zone"
+  dns_name    = "${var.domain_name}."
+  description = "Production DNS zone"
+}
+
+resource "google_dns_record_set" "grafana" {
+  name = "grafana.${google_dns_managed_zone.prod.dns_name}"
+  type = "A"
+  ttl  = 300
+
+  managed_zone = "${google_dns_managed_zone.prod.name}"
+
+  rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
+}
+
+resource "google_dns_record_set" "influx" {
+  name = "grafana.${google_dns_managed_zone.prod.dns_name}"
+  type = "A"
+  ttl  = 300
+
+  managed_zone = "${google_dns_managed_zone.prod.name}"
+
+  rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
 }
 
 resource "random_id" "instance_id" {
@@ -39,7 +65,7 @@ resource "google_compute_instance" "appserver" {
   }
 
   attached_disk {
-    source = "temperature-data"
+    source = "${var.local_project}-data"
     mode   = "READ_WRITE"
   }
 
@@ -107,6 +133,23 @@ EOF
     inline = [
       "cd /home/ubuntu/service",
       "docker-compose up -d",
+    ]
+  }
+
+  provisioner "remote-exec" {
+    when = "destroy"
+
+    inline = [
+      "cd /home/ubuntu/service",
+      "docker-compose down",
+    ]
+  }
+
+  provisioner "remote-exec" {
+    when = "destroy"
+
+    inline = [
+      "echo | sudo -S umount /data",
     ]
   }
 }
