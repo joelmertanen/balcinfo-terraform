@@ -16,6 +16,16 @@ resource "google_dns_managed_zone" "prod" {
   description = "Production DNS zone"
 }
 
+resource "google_dns_record_set" "prod-dns-ns" {
+  name = "${google_dns_managed_zone.prod.dns_name}"
+  type = "NS"
+  ttl  = 21600
+
+  managed_zone = "${google_dns_managed_zone.prod.name}"
+
+  rrdatas = "${var.dns_servers}"
+}
+
 resource "google_dns_record_set" "grafana" {
   name = "grafana.${google_dns_managed_zone.prod.dns_name}"
   type = "A"
@@ -26,8 +36,18 @@ resource "google_dns_record_set" "grafana" {
   rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
 }
 
+resource "google_dns_record_set" "prod-top-level" {
+  name = "${google_dns_managed_zone.prod.dns_name}"
+  type = "A"
+  ttl  = 300
+
+  managed_zone = "${google_dns_managed_zone.prod.name}"
+
+  rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
+}
+
 resource "google_dns_record_set" "influx" {
-  name = "grafana.${google_dns_managed_zone.prod.dns_name}"
+  name = "influx.${google_dns_managed_zone.prod.dns_name}"
   type = "A"
   ttl  = 300
 
