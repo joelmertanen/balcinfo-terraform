@@ -1,3 +1,6 @@
-account.json
-config.tf
+*account.json
+*~
+.terraform/
+terraform.tfstate*
+terraform.tfvars
 
