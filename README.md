@@ -14,3 +14,8 @@ Fill in the variables to `terraform.tfvars`.
 terraform plan
 terraform apply
 ```
+
+## TODO
+
+- Split to multiple files / modules
+- Test using Container optimized OS to get rid of installing the docker
