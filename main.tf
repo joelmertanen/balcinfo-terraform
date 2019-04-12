@@ -141,12 +141,17 @@ docker run -ti \
 google/cloud-sdk:latest /bin/bash -c \
 "gcloud auth activate-service-account ${var.service_account_email} --key-file=/certs/google_cloud_service_account.json --project=${var.project_name} &&
 cd /service &&
-gsutil cp gs://backend-storage/docker-compose.yml gs://backend-storage/.env.encrypted . &&
+gsutil cp gs://backend-storage/.env.encrypted . &&
 gcloud kms decrypt --location global --keyring storage --key storage --plaintext-file .env  --ciphertext-file .env.encrypted"
 EOF
       ,
       "rm -rf certs",
     ]
+  }
+
+  provisioner "file" {
+    source      = "docker-compose.yml"
+    destination = "/home/ubuntu/service/docker-compose.yml"
   }
 
   provisioner "remote-exec" {
