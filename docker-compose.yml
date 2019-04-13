@@ -31,7 +31,7 @@ services:
       - docker-volume-backup.exec-post-backup=rm -rfv /tmp/backup
 
   grafana:
-    image: grafana/grafana:5.4.2
+    image: grafana/grafana:6.1.3
     restart: always
     expose:
       - "3000"
