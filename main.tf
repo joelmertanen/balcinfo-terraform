@@ -1,7 +1,7 @@
 provider "google" {
-  credentials = "${var.google_cloud_service_account}"
-  project     = "${var.project_name}"
-  region      = "${var.region}"
+  credentials = var.google_cloud_service_account
+  project     = var.project_name
+  region      = var.region
   zone        = "${var.region}-a"
 }
 
@@ -15,21 +15,21 @@ resource "google_dns_managed_zone" "prod" {
   dns_name    = "${var.domain_name}."
   description = "Production DNS zone"
 
-  lifecycle = {
+  lifecycle {
     prevent_destroy = true
   }
 }
 
 resource "google_dns_record_set" "prod-dns-ns" {
-  name = "${google_dns_managed_zone.prod.dns_name}"
+  name = google_dns_managed_zone.prod.dns_name
   type = "NS"
   ttl  = 21600
 
-  managed_zone = "${google_dns_managed_zone.prod.name}"
+  managed_zone = google_dns_managed_zone.prod.name
 
-  rrdatas = "${var.dns_servers}"
+  rrdatas = var.dns_servers
 
-  lifecycle = {
+  lifecycle {
     prevent_destroy = true
   }
 }
@@ -39,19 +39,19 @@ resource "google_dns_record_set" "grafana" {
   type = "A"
   ttl  = 300
 
-  managed_zone = "${google_dns_managed_zone.prod.name}"
+  managed_zone = google_dns_managed_zone.prod.name
 
-  rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
+  rrdatas = [google_compute_instance.appserver.network_interface[0].access_config[0].nat_ip]
 }
 
 resource "google_dns_record_set" "prod-top-level" {
-  name = "${google_dns_managed_zone.prod.dns_name}"
+  name = google_dns_managed_zone.prod.dns_name
   type = "A"
   ttl  = 300
 
-  managed_zone = "${google_dns_managed_zone.prod.name}"
+  managed_zone = google_dns_managed_zone.prod.name
 
-  rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
+  rrdatas = [google_compute_instance.appserver.network_interface[0].access_config[0].nat_ip]
 }
 
 resource "google_dns_record_set" "influx" {
@@ -59,9 +59,9 @@ resource "google_dns_record_set" "influx" {
   type = "A"
   ttl  = 300
 
-  managed_zone = "${google_dns_managed_zone.prod.name}"
+  managed_zone = google_dns_managed_zone.prod.name
 
-  rrdatas = ["${google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip}"]
+  rrdatas = [google_compute_instance.appserver.network_interface[0].access_config[0].nat_ip]
 }
 
 resource "random_id" "instance_id" {
@@ -73,7 +73,7 @@ resource "google_compute_instance" "appserver" {
   machine_type = "g1-small"
   zone         = "${var.region}-a"
 
-  metadata {
+  metadata = {
     sshKeys = "ubuntu:${file(var.ssh_key_path)}"
   }
 
@@ -82,7 +82,7 @@ resource "google_compute_instance" "appserver" {
 
     access_config {
       network_tier = "PREMIUM"
-      nat_ip       = "${google_compute_address.static.address}"
+      nat_ip       = google_compute_address.static.address
     }
   }
 
@@ -98,9 +98,10 @@ resource "google_compute_instance" "appserver" {
   }
 
   connection {
+    host        = google_compute_instance.appserver.network_interface.0.access_config.0.nat_ip
     type        = "ssh"
     user        = "ubuntu"
-    private_key = "${file(replace(var.ssh_key_path, ".pub", ""))}"
+    private_key = file(replace(var.ssh_key_path, ".pub", ""))
   }
 
   // set up docker repo
@@ -123,7 +124,7 @@ resource "google_compute_instance" "appserver" {
   }
 
   provisioner "file" {
-    content     = "${var.google_cloud_service_account}"
+    content     = var.google_cloud_service_account
     destination = "/home/ubuntu/google_cloud_service_account.json"
   }
 
@@ -170,7 +171,7 @@ EOF
   }
 
   provisioner "remote-exec" {
-    when = "destroy"
+    when = destroy
 
     inline = [
       "cd /home/ubuntu/service",
@@ -179,7 +180,7 @@ EOF
   }
 
   provisioner "remote-exec" {
-    when = "destroy"
+    when = destroy
 
     inline = [
       "echo | sudo -S umount /data",
