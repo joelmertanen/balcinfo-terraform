@@ -69,12 +69,13 @@ resource "random_id" "instance_id" {
 }
 
 resource "google_compute_instance" "appserver" {
-  name         = "appserver-${random_id.instance_id.hex}"
-  machine_type = "g1-small"
-  zone         = "${var.region}-a"
+  name                      = "appserver-${random_id.instance_id.hex}"
+  machine_type              = "g1-small"
+  zone                      = "${var.region}-a"
+  allow_stopping_for_update = true
 
   metadata = {
-    sshKeys = "ubuntu:${file(var.ssh_key_path)}"
+    ssh-keys = "ubuntu:${file(var.ssh_key_path)}"
   }
 
   network_interface {
@@ -170,20 +171,13 @@ EOF
     ]
   }
 
-  provisioner "remote-exec" {
-    when = destroy
-
-    inline = [
-      "cd /home/ubuntu/service",
-      "docker-compose down",
-    ]
-  }
-
-  provisioner "remote-exec" {
-    when = destroy
-
-    inline = [
-      "echo | sudo -S umount /data",
-    ]
-  }
+  #  provisioner "remote-exec" {
+  #    when = destroy
+  #
+  #    inline = [
+  #      "cd /home/ubuntu/service",
+  #      "docker-compose down",
+  #      "echo | sudo -S umount /data"
+  #    ]
+  #  }
 }
